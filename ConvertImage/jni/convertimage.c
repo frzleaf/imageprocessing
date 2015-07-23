@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <android/log.h>
 #include <android/bitmap.h>
+#include <math.h>
 /*
  * Class:     com_leth_convertimage_MainActivity
  * Method:    convertImage
@@ -11,11 +12,11 @@
 
 typedef struct
 {
-	uint8_t alpha;
 	uint8_t red;
 	uint8_t green;
 	uint8_t blue;
-} argb;
+	uint8_t alpha;
+} rgba;
 
 JNIEXPORT void JNICALL Java_com_leth_convertimage_MainActivity_convertImage
 	(JNIEnv *env, jobject  obj, jobject origbm,jobject graybm)
@@ -31,21 +32,37 @@ JNIEXPORT void JNICALL Java_com_leth_convertimage_MainActivity_convertImage
 	    LOGI("Before convert");
 
 	    AndroidBitmap_getInfo(env, origbm, &infocolor);
+	    LOGI("infocolor :: width-%d height-%d format-%d stride-%ld"
+	    				   ,infocolor.width
+						   ,infocolor.height
+						   ,infocolor.stride);
 	    AndroidBitmap_getInfo(env, graybm, &infogray);
 	    AndroidBitmap_lockPixels(env, origbm, &pixelscolor);
 	    AndroidBitmap_lockPixels(env, graybm, &pixelsgray);
 
 	    LOGI("Start convert");
-
-	    for (y=0;y<infocolor.height;y++) {
-	    	argb * line = (argb *) pixelscolor;
-	    	uint8_t * grayline = (uint8_t *) pixelsgray;
-	    	for (x=0;x<infocolor.width;x++) {
-	    		grayline[x] = 0.3 * line[x].red + 0.59 * line[x].green + 0.11*line[x].blue;
-	    	/*	LOGI("Pixels: %d", grayline[x]);*/
+	    uint8_t tmp;
+	    for ( y=0; y<infocolor.height; y++) {
+	    	rgba * line = (rgba *) pixelscolor;
+	    	uint32_t * grayline = (uint32_t *) pixelsgray;
+	    	for ( x=0; x < infocolor.width; x++){
+	    		tmp =
+	    				line[x].red * 0.33
+	    				+ line[x].green  * 0.33
+						+ line[x].blue * 0.33
+						;
+	    		grayline[x] =
+	    					  (line[x].alpha & 0xff) << 24
+							| (tmp & 0xff) << 16
+							| (tmp & 0xff) << 8
+							| (tmp & 0xff)
+							//| line[x].red << 16
+							//| line[x].green << 8
+	    					//| line[x].blue
+							;
 	    	}
-	    	pixelscolor = (char *)pixelscolor + infocolor.stride;
-	    	pixelsgray = (char *) pixelsgray + infogray.stride;
+	    	pixelscolor = (int8_t *)pixelscolor + infocolor.stride;
+	    	pixelsgray = (int8_t *) pixelsgray + infogray.stride;
 	    }
 
 	    LOGI("Finish convert");
