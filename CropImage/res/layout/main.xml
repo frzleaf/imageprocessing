@@ -8,14 +8,17 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.leth.convertimage.MainActivity" >
 
-    <ImageView
-        android:id="@+id/image"
+    <LinearLayout
+        android:id="@+id/lo_img"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_above="@+id/btn_layout"
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true" />
+        android:layout_below="@+id/tv_pos"
+        android:orientation="vertical" >
+
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tv_rs"
@@ -24,7 +27,7 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
-        android:text="TextView" />
+        android:text="Result" />
 
     <LinearLayout
         android:id="@+id/btn_layout"
@@ -43,18 +46,27 @@
             android:text="Reset" />
 
         <Button
-            android:id="@+id/nativeconvert"
+            android:id="@+id/nativ_btn"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
             android:layout_weight="1"
-            android:text="NConv" />
+            android:text="NCrop" />
 
         <Button
-            android:id="@+id/directconvert"
+            android:id="@+id/xfer_btn"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
             android:layout_weight="1"
-            android:text="JConv" />
+            android:text="Xferm" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_pos"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:text="Position" />
 
 </RelativeLayout>

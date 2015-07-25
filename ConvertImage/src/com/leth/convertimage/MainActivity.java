@@ -121,7 +121,6 @@ public class MainActivity extends Activity implements OnClickListener {
 											convert_type, System.currentTimeMillis() - t);
 				}
 				
-				
 				protected void onPostExecute(String result) {
 					
 					dialog.dismiss(); 					// Clear dialog
