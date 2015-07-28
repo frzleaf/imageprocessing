@@ -14,7 +14,6 @@ typedef struct {
 	uint8_t alpha;
 } rgba;
 
-
 JNIEXPORT void JNICALL Java_com_leth_cropimage_CropLib_nativeCrop
 (JNIEnv *env, jclass jclz, jobject origbm, jobject cutbm, jintArray xarr, jintArray yarr, jint len) {
 
@@ -36,82 +35,86 @@ JNIEXPORT void JNICALL Java_com_leth_cropimage_CropLib_nativeCrop
 	jint *xar = (*env)->GetIntArrayElements(env, xarr, 0);
 	jint *yar = (*env)->GetIntArrayElements(env, yarr, 0);
 
-	int i = 0, j = 0, start = 0;
+	int i = 0, j = 0, k = 0,// enum
+	top = 0, bot = 0,
+	lef = 0, rig = 0;
 
 	// Rearrange the array by x
-	for ( start = 0, i = 1; i < len; ++i) {
-		if ( yar[i] < yar[start] )
-		start = i;
+	for ( top = 0, i = 1; i < len; ++i) {
+		if ( yar[i] < yar[top] )
+		top = i;
+		if ( yar[i] > yar[bot] )
+		bot = i;
+		if ( xar[i] < xar[lef])
+		lef = i;
+		if ( xar[i] > xar[rig])
+		rig = i;
 	}
 
-	i = start;
-	int end = start != 0 ? (start - 1 ) % len : len - 1;
-	int oy, y;
-	int ox, x;
-	int count = 0;
-	int iNext = (start + 1) % len;
+	// Set start point
+	origpixels = (int8_t *)origpixels + originfo.stride*yar[top];
+	cutpixels = (int8_t *)cutpixels + cutinfo.stride*yar[top];
 
+	for ( j = yar[top]; j <= yar[bot]; ++j) {
 
-	cutpixels = ( char* )cutpixels + cutinfo.stride * yar[start];
-	origpixels = ( char* )origpixels + originfo.stride * yar[start];
+		uint32_t * srcpix = (uint32_t *) origpixels;
+		uint32_t * despix = (uint32_t *) cutpixels;
 
-	LOGI("Start at = %d", start);
+		for ( k = xar[lef]; k <= xar[rig]; ++k ) {
 
-	// *NOTE: Crop by counter-clockwise direction would return unexpected results.
-	for ( y = yar[i], x = xar[i],
-			oy = y, ox = x
-			; count <= len
-			; y = yar[i] , x = xar[i],
-			iNext = (i + 1) % len ) {
+			int inside = 0;
 
-		if ( y - oy > 1 || oy - y > 1 ) {
-			y = y > oy
-				? oy + 1
-				: oy - 1;
-			if( yar[iNext] != yar[i] ) { 					// x = deltay * (dx / dy ) + x0
-				x = 1.*(y-yar[i]) * (xar[iNext] - xar[i]) / (yar[iNext] - yar[i])
-						+ 0.5 + xar[i]; 					//  using +0.5 instead of round function
-				LOGI( "(x,y) = (%d,%d) ", x, y );
+			// Check (k,j) to (0,0) cut (xar[i], yar[i]) to (xar[i-1], yar[i-1])
+			for ( i = 1; i < len; ++i ) {
+				if ( k < xar[i] && k < xar[i-1] ) // left side -> out
+				continue;
+				else
+				if ( yar[i] < j && j < yar[i-1]
+						|| yar[i-1] < j && j < yar[i] )
+				++inside;
 			}
-		} else {
-			i = iNext;
-			++ count;
+
+			// Last segment line
+			if ( k < xar[0] && k < xar[len-1] ){}// out
+			else
+			if ( yar[0] <= j && j <= yar[len-1]
+					|| yar[len-1] <= j && j <= yar[0] )
+			++inside;
+
+			if ( inside & 1 )// inside is odd number which mean this point is inside the crop area
+				despix[k] = srcpix[k];
 		}
 
-		// Paint the inside
-		uint32_t *pixels = (uint32_t *) cutpixels;
-		uint32_t *opixels = (uint32_t *) origpixels;
+		origpixels = (int8_t *)origpixels + originfo.stride;
+		cutpixels = (int8_t *)cutpixels + cutinfo.stride;
 
-		int isClear = 0;
-
-		if ( pixels[0] != 0 && y != oy )
-		isClear = 1;
-
-		if ( isClear )
-		// Clear pixel from x to 0 ~~~ set alpha = 0
-		for ( j = x - 1; j >= 0; --j ) {
-			pixels[j] = 0;
-		}
-		else
-		// Copy original pixel to croping pixel
-		for ( j = x; j >= 0; --j ) {
-			pixels[j] = opixels[j];
-		}
-
-		if ( y > oy ) { // Go down
-			cutpixels = ( char* )cutpixels + cutinfo.stride;
-			origpixels = ( char* )origpixels + originfo.stride;
-		}
-		else if ( oy > y ) { // Painting go up
-			cutpixels = ( char* )cutpixels - cutinfo.stride;
-			origpixels = ( char* )origpixels - originfo.stride;
-		}
-		oy = y;
-		ox = x;
 	}
+
+	cutpixels = ( char* )cutpixels + cutinfo.stride * yar[top];
+	origpixels = ( char* )origpixels + originfo.stride * yar[top];
 
 	LOGI("Finish crop");
 	AndroidBitmap_unlockPixels(env, origbm);
 	AndroidBitmap_unlockPixels(env, cutbm);
 }
 
+/*
+ int rs = 0;
+ int i = 0;
+ for ( i = 1;  i < len ; ++i ){
+ if ( x < xar[i] && x < xar[i-1] ) // out
+ continue;
+ else
+ if ( yar[i] <= y  && y <= yar[i-1]
+ || yar[i-1] <= y && y <= yar[i] )
+ ++rs;
+ }
+
+ // Last segment line
+ if ( x < xar[0] && x < xar[len-1] ) // out
+ continue;
+ else
+ if ( yar[0] <= y  && y <= yar[len-1]
+ || yar[len-1] <= y && y <= yar[0] )
+ ++rs;
+ */
