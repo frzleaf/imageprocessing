@@ -1,18 +1,10 @@
 package com.leth.cropimage;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Point;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.text.Layout;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup;
-import android.widget.FrameLayout;
-import android.widget.FrameLayout.LayoutParams;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -35,7 +27,6 @@ public class MainActivity extends Activity implements OnClickListener {
 		tv_rs = (TextView) findViewById(R.id.tv_rs);
 
 		// Set image on the right position
-		int pos[] = new int[2];
 		// Replace the image by another
 		cr_view = new CropView(this, tv_pos);
 
@@ -66,12 +57,22 @@ public class MainActivity extends Activity implements OnClickListener {
 
 		// Change the List<point> to 2 arrays of x and y which pass to native
 		// method
+		
 		int[] xar = new int[cr_view.points.size()];
 		int[] yar = new int[cr_view.points.size()];
-		int i = 0;
-		for (Point p : cr_view.points) {
-			xar[i] = p.x;
-			yar[i++] = p.y;
+		
+		xar[0] = cr_view.points.get(0).x;
+		yar[0] = cr_view.points.get(0).y;
+		
+		for ( int i = 1 ; i < cr_view.points.size() ; ++i ){
+			if ( cr_view.points.get(i).x == cr_view.points.get(i - 1).x
+					&& cr_view.points.get(i).y == cr_view.points.get(i - 1).y
+					) {
+				cr_view.points.remove(i--);
+			} else {
+				xar[i] = cr_view.points.get(i).x;
+				yar[i] = cr_view.points.get(i).y;
+			}
 		}
 
 		bm_cropped = Bitmap.createBitmap(cr_view.bitmap.getWidth(), cr_view.bitmap.getHeight(),
@@ -81,7 +82,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		long t = 0;
 		if (cr_view.points.size() > 0) {
 			t = System.currentTimeMillis();
-			CropLib.nativeCrop(cr_view.bitmap, bm_cropped, xar, yar, xar.length);
+			CropLib.nativeCrop(cr_view.bitmap, bm_cropped, xar, yar, cr_view.points.size() );
 			t = System.currentTimeMillis() - t;
 		}
 		// Display the result

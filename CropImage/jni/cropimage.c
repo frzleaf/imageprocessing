@@ -68,21 +68,25 @@ JNIEXPORT void JNICALL Java_com_leth_cropimage_CropLib_nativeCrop
 			for ( i = 1; i < len; ++i ) {
 				if ( k < xar[i] && k < xar[i-1] ) // left side -> out
 				continue;
-				else
 
-				if ( yar[i] <= j && j <= yar[i-1]
-						|| yar[i-1] <= j && j <= yar[i] )
+				int leap = yar[i] > yar[i-1]
+						  ? - 1
+						  : 1;
+
+				if ( yar[i] + leap <= j && j <=  yar[i-1]
+						|| yar[i-1] <= j && j <= yar[i] + leap )
 				{
-
 					float a,b,c;
 					// Follow the equation: ax + by + c = 0
 					a = yar[i] - yar[i-1];
 					b = xar[i-1] - xar[i];
 					c = (-1) * ( a * xar[i] + b * yar[i]);
 
-					// Check (0,j) and (k,j) both in a side of above line
+					// Check (0,j) and (k,j) each in both sides of above line
 					if ( ( b*j + c) * (a*k + b*j + c) <= 0 )
 					++inside;
+					/*if ( j == yar[i-1] )
+					 --inside;*/
 				}
 			}
 
