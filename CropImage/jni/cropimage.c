@@ -69,20 +69,41 @@ JNIEXPORT void JNICALL Java_com_leth_cropimage_CropLib_nativeCrop
 				if ( k < xar[i] && k < xar[i-1] ) // left side -> out
 				continue;
 				else
-				if ( yar[i] < j && j < yar[i-1]
-						|| yar[i-1] < j && j < yar[i] )
-				++inside;
+
+				if ( yar[i] <= j && j <= yar[i-1]
+						|| yar[i-1] <= j && j <= yar[i] )
+				{
+
+					float a,b,c;
+					// Follow the equation: ax + by + c = 0
+					a = yar[i] - yar[i-1];
+					b = xar[i-1] - xar[i];
+					c = (-1) * ( a * xar[i] + b * yar[i]);
+
+					// Check (0,j) and (k,j) both in a side of above line
+					if ( ( b*j + c) * (a*k + b*j + c) <= 0 )
+					++inside;
+				}
 			}
 
 			// Last segment line
-			if ( k < xar[0] && k < xar[len-1] ){}// out
-			else
-			if ( yar[0] <= j && j <= yar[len-1]
-					|| yar[len-1] <= j && j <= yar[0] )
-			++inside;
+			/*if ( k < xar[0] && k < xar[len-1] ) {} // out
+			 else
+			 if ( yar[0] <= j && j <= yar[len-1]
+			 || yar[len-1] <= j && j <= yar[0] ) {
+			 float a,b,c;
+			 // Follow the equation: ax + by + c = 0
+			 a = yar[i] - yar[i-1];
+			 b = xar[i-1] - xar[i];
+			 c = (-1) * ( a * xar[i] + b * yar[i]);
+
+			 // Check (0,j) and (k,j) both in a side of above line
+			 if ( ( b*j + c) * (a*k + b*j + c) <= 0 )
+			 ++inside;
+			 }*/
 
 			if ( inside & 1 )// inside is odd number which mean this point is inside the crop area
-				despix[k] = srcpix[k];
+			despix[k] = srcpix[k];
 		}
 
 		origpixels = (int8_t *)origpixels + originfo.stride;
