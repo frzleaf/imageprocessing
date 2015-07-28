@@ -64,6 +64,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		xar[0] = cr_view.points.get(0).x;
 		yar[0] = cr_view.points.get(0).y;
 		
+		// Remove the duplicated points & copy to the 2 arrays ( x & y )
 		for ( int i = 1 ; i < cr_view.points.size() ; ++i ){
 			if ( cr_view.points.get(i).x == cr_view.points.get(i - 1).x
 					&& cr_view.points.get(i).y == cr_view.points.get(i - 1).y

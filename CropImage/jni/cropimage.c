@@ -39,7 +39,7 @@ JNIEXPORT void JNICALL Java_com_leth_cropimage_CropLib_nativeCrop
 	top = 0, bot = 0,
 	lef = 0, rig = 0;
 
-	// Rearrange the array by x
+	// Find the around rectangle
 	for ( top = 0, i = 1; i < len; ++i) {
 		if ( yar[i] < yar[top] )
 		top = i;
@@ -55,7 +55,7 @@ JNIEXPORT void JNICALL Java_com_leth_cropimage_CropLib_nativeCrop
 	origpixels = (int8_t *)origpixels + originfo.stride*yar[top];
 	cutpixels = (int8_t *)cutpixels + cutinfo.stride*yar[top];
 
-	for ( j = yar[top]; j <= yar[bot]; ++j) {
+	for ( j = yar[top] + 1; j <= yar[bot] - 1; ++j) {
 
 		uint32_t * srcpix = (uint32_t *) origpixels;
 		uint32_t * despix = (uint32_t *) cutpixels;
@@ -70,10 +70,10 @@ JNIEXPORT void JNICALL Java_com_leth_cropimage_CropLib_nativeCrop
 				continue;
 
 				int leap = yar[i] > yar[i-1]
-						  ? - 1
-						  : 1;
+				? - 1
+				: 1;
 
-				if ( yar[i] + leap <= j && j <=  yar[i-1]
+				if ( yar[i] + leap <= j && j <= yar[i-1]
 						|| yar[i-1] <= j && j <= yar[i] + leap )
 				{
 					float a,b,c;
@@ -82,32 +82,14 @@ JNIEXPORT void JNICALL Java_com_leth_cropimage_CropLib_nativeCrop
 					b = xar[i-1] - xar[i];
 					c = (-1) * ( a * xar[i] + b * yar[i]);
 
-					// Check (0,j) and (k,j) each in both sides of above line
+					// Check (0,j) and (k,j) in both sides of above line
 					if ( ( b*j + c) * (a*k + b*j + c) <= 0 )
 					++inside;
-					/*if ( j == yar[i-1] )
-					 --inside;*/
 				}
 			}
 
-			// Last segment line
-			/*if ( k < xar[0] && k < xar[len-1] ) {} // out
-			 else
-			 if ( yar[0] <= j && j <= yar[len-1]
-			 || yar[len-1] <= j && j <= yar[0] ) {
-			 float a,b,c;
-			 // Follow the equation: ax + by + c = 0
-			 a = yar[i] - yar[i-1];
-			 b = xar[i-1] - xar[i];
-			 c = (-1) * ( a * xar[i] + b * yar[i]);
-
-			 // Check (0,j) and (k,j) both in a side of above line
-			 if ( ( b*j + c) * (a*k + b*j + c) <= 0 )
-			 ++inside;
-			 }*/
-
-			if ( inside & 1 )// inside is odd number which mean this point is inside the crop area
-			despix[k] = srcpix[k];
+			if ( inside & 1 ) // inside is odd number which mean this point is inside the crop area
+				despix[k] = srcpix[k];
 		}
 
 		origpixels = (int8_t *)origpixels + originfo.stride;
